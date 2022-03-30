@@ -1,11 +1,14 @@
 import imdb
 import requests
+from data.users import Film
+from data.db_session import create_session
 
 moviesDB = imdb.IMDb()
 
 
-def find_film(f_name):
+def find_film(f_name, user_id):
     try:
+        db_sess = create_session()
         movies = moviesDB.search_movie(f_name.lower())
         f_id = movies[0].getID()
         movie = moviesDB.get_movie(f_id)
@@ -15,6 +18,12 @@ def find_film(f_name):
         f.truncate()
         f.write(bytes(poster))
         f.close()
+        if len(db_sess.query(Film).filter(Film.us_tg_id == user_id, Film.film_id == f_id).all()) == 0:
+            film = Film()
+            film.film_id = int(f_id)
+            film.us_tg_id = int(user_id)
+            db_sess.add(film)
+            db_sess.commit()
         text = f"Название фильма: <b>{movie['localized title']}</b>\n" \
                f"Оригинальное название: <b>{movie['original title']}</b>\n" \
                f"Режиссер: <b>{movie['directors'][0]}</b>\n" \
@@ -23,6 +32,7 @@ def find_film(f_name):
                f"Рейтинг IMDb: <b>{movie['rating']}</b>\n" \
                f"Страна: {movie['countries'][0]}\n" \
                f"Сценарист: {movie['writers'][0]}"
-        return text
-    except Exception:
+        return text, f_id
+    except Exception as e:
+        print(e)
         return 'ERROR'
