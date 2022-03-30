@@ -12,13 +12,13 @@ def start(m):
     bot.send_message(m.chat.id, "Какой фильм вы бы хотели посмотреть")
 
 
-@bot.message_handler(content_types=['text'])
+@bot.message_handler(commands=['find'])
 def get_film(m):
-    if 'покажи фильм' in m.text.lower():
-        req = find_film(m.text[12:].strip())
-        poster = open('poster.jpg', 'rb')
-        bot.send_photo(m.chat.id, poster)
-        bot.send_message(m.chat.id, req.format(m.from_user, bot.get_me()), parse_mode='html')
+    f_name = ''.join(m.text.split()[1:])
+    req = find_film(f_name)
+    poster = open('poster.jpg', 'rb')
+    bot.send_photo(m.chat.id, poster)
+    bot.send_message(m.chat.id, req.format(m.from_user, bot.get_me()), parse_mode='html')
 
 
 bot.polling(none_stop=True, interval=0)
