@@ -3,6 +3,7 @@ from telebot import types
 import imdb
 from config import apytoken
 from films_info import find_film
+from actors_info import find_person
 from data.users import Film, User
 from data.db_session import global_init, create_session
 import wikipedia
@@ -26,7 +27,7 @@ def start(m):
     bot.send_message(m.chat.id, "Какой фильм вы бы хотели посмотреть")
 
 
-@bot.message_handler(commands=['find'])
+@bot.message_handler(commands=['film'])
 def get_film(m):
     f_name = ''.join(m.text.split()[1:])
     req = find_film(f_name, m.json['from']['id'])
@@ -40,6 +41,15 @@ def get_film(m):
     bot.send_message(m.chat.id, req[0].format(m.from_user, bot.get_me()), parse_mode='html', reply_markup=keyboard1)
 
 
+@bot.message_handler(commands=['person'])
+def get_person(m):
+    p_name = ' '.join(m.text.split()[1:])
+    req = find_person(p_name)
+    poster = open('poster.jpg', 'rb')
+    bot.send_photo(m.chat.id, poster)
+    bot.send_message(m.chat.id, req)
+
+
 @bot.callback_query_handler(func=lambda call: True)
 def callback(call):
     try:
@@ -51,14 +61,16 @@ def callback(call):
                     bot.send_message(call.message.chat.id, 'Какова ваша оценка?')
                     bot.register_next_step_handler(call.message, get_rating)
                 elif call.data[:2] == 'q2':
-                    page = wikipedia.summary(f'ID {call.data[2:]}', sentences=6)  # инфа о фильме с wikipedia
+                    page = wikipedia.summary(f'ID {call.data[2:]}')  # инфа о фильме с wikipedia
                     bot.send_message(call.message.chat.id, page)
                 elif call.data[:2] == 'q3':
                     db_sess = create_session()
                     curr_id = int(call.data[2:])
                     fm = db_sess.query(Film).filter(Film.film_id == curr_id)[0]
                     fm.watch_list = True
+                    title = fm.loc_title
                     db_sess.commit()
+                    bot.send_message(call.message.chat.id, f'Фильм "{title}" добавлен в лист ожидания')
 
     except Exception:
         bot.send_message(call.message.chat.id, 'Error callback')
