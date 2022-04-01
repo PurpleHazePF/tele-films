@@ -22,6 +22,7 @@ def find_film(f_name, user_id):
             film = Film()
             film.film_id = int(f_id)
             film.us_tg_id = int(user_id)
+            film.loc_title = movie['localized title']
             db_sess.add(film)
             db_sess.commit()
         text = f"Название фильма: <b>{movie['localized title']}</b>\n" \
@@ -34,5 +35,4 @@ def find_film(f_name, user_id):
                f"Сценарист: {movie['writers'][0]}"
         return text, f_id
     except Exception as e:
-        print(e)
-        return 'ERROR'
+        return f'{e.__class__.__name__}'
