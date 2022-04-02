@@ -29,7 +29,7 @@ def find_film(f_name, user_id):
                f"Оригинальное название: <b>{movie['original title']}</b>\n" \
                f"Режиссер: <b>{movie['directors'][0]}</b>\n" \
                f"Актеры: {', '.join([str(i) for j, i in enumerate(movie['cast']) if j < 4])}\n" \
-               f"Жанр: {movie['genres'][0]}\nГод выпуска: {movie['year']}\n" \
+               f"Жанр: {movie['genres'][0]}, {movie['genres'][1]}\nГод выпуска: {movie['year']}\n" \
                f"Рейтинг IMDb: <b>{movie['rating']}</b>\n" \
                f"Страна: {movie['countries'][0]}\n" \
                f"Сценарист: {movie['writers'][0]}"
