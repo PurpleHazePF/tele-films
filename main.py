@@ -20,10 +20,12 @@ current_film = 0
 @bot.message_handler(commands=['start'])
 def start(m):
     db_sess = create_session()
-    user = User()
-    user.tg_id = m.join['from']['id']
-    db_sess.add(user)
-    db_sess.commit()
+    if db_sess.query(User).filter(User.tg_id == m.from_user.id) is None:
+        user = User()
+        user.tg_id = m.from_user.id
+        db_sess.add(user)
+        db_sess.commit()
+    bot.send_message(m.chat.id, f'Привет {m.from_user.first_name}!')
     bot.send_message(m.chat.id, "Какой фильм вы бы хотели посмотреть")
 
 
@@ -40,6 +42,19 @@ def get_film(m):
     keyboard1.add(button1, button2, button3, button4)
     bot.send_photo(m.chat.id, poster)
     bot.send_message(m.chat.id, req[0].format(m.from_user, bot.get_me()), parse_mode='html', reply_markup=keyboard1)
+
+
+@bot.message_handler(commands=['watch_list'])
+def get_watch_list(m):
+    user_id = m.from_user.id
+    db_sess = create_session()
+    user = db_sess.query(User).filter(User.tg_id == user_id)[0]
+    films = user.film
+    text = ''
+    for i, j in enumerate(films):
+        if j.watch_list:
+            text += f'{i + 1})  <b>{j.loc_title}</b>\n'
+    bot.send_message(m.chat.id, text, parse_mode='html')
 
 
 @bot.message_handler(commands=['person'])
@@ -64,14 +79,6 @@ def callback(call):
                 elif call.data[:2] == 'q2':
                     page = wikipedia.summary(f'ID {call.data[2:]}')  # инфа о фильме с wikipedia
                     bot.send_message(call.message.chat.id, page)
-                elif call.data[:2] == 'q4':
-                    db_sess = create_session()
-                    curr_id = int(call.data[2:])
-                    fm = db_sess.query(Film).filter(Film.film_id == curr_id)[0]
-                    fm.watch_list = True
-                    title = fm.loc_title
-                    db_sess.commit()
-                    bot.send_message(call.message.chat.id, f'Фильм "{title}" добавлен в лист ожидания')
                 elif call.data[:2] == 'q3':
                     curr_id = int(call.data[2:])
                     film = moviesDB.get_movie(curr_id)
@@ -80,6 +87,14 @@ def callback(call):
                         text += f'{i + 1}) <b>{j}</b>\n'
                     bot.send_message(call.message.chat.id, text.format(call.message.from_user, bot.get_me()),
                                      parse_mode='html')
+                elif call.data[:2] == 'q4':
+                    db_sess = create_session()
+                    curr_id = int(call.data[2:])
+                    fm = db_sess.query(Film).filter(Film.film_id == curr_id)[0]
+                    fm.watch_list = True
+                    title = fm.loc_title
+                    db_sess.commit()
+                    bot.send_message(call.message.chat.id, f'Фильм "{title}" добавлен в лист ожидания')
 
     except Exception:
         bot.send_message(call.message.chat.id, 'Error callback')
@@ -93,6 +108,8 @@ def get_rating(message):
         numb = int(fm_rating)
         fm = db_sess.query(Film).filter(Film.film_id == current_film)[0]
         fm.rating = numb
+        fm.viewed = True
+        fm.watch_list = False
         db_sess.commit()
         bot.send_message(message.chat.id, 'Оценка успешно добавлена')
     except Exception:
