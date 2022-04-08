@@ -1,12 +1,13 @@
 import telebot
 from telebot import types
 import imdb
-from config import apytoken, trailers
+from config import apytoken, staff
 from films_info import find_film
 from actors_info import find_person
 from data.users import Film, User
 from data.db_session import global_init, create_session
 import wikipedia
+import sqlite3
 
 language = "ru"
 wikipedia.set_lang(language)
@@ -15,6 +16,8 @@ moviesDB = imdb.IMDb()
 localdb = 'db/films_info'
 global_init(localdb)
 current_film = 0
+con = sqlite3.connect('trailers.db', check_same_thread=False)
+cur = con.cursor()
 
 
 @bot.message_handler(commands=['start'])
@@ -52,12 +55,26 @@ def get_film(m):
 def get_trailer(m):
     film = " ".join(m.text.split()[1:])
     try:
-        res = trailers[film.lower()]
+        a = cur.execute(f"""SELECT url FROM trailers
+        WHERE name = '{film.lower()}'""").fetchall()
         bot.send_message(m.chat.id, f"Трейлер к фильму {film}")
-        bot.send_message(m.chat.id, res)
+        bot.send_message(m.chat.id, a[0][0])
     except Exception:
         bot.send_message(m.chat.id, "Этого трейлера пока нету в нашей базе")
         bot.send_sticker(m.chat.id, "CAACAgIAAxkBAAEEaChiUBeRMyt-o2uxOc1mvJSIsUgKAAPZFwACq_whStzEfsp_ztIeIwQ")
+
+@bot.message_handler(commands=['addtrailer'])
+def addtrailer(m):
+    if m.from_user.id in staff:
+        try:
+            a = m.text.split()[1:]
+            cur.execute(f"INSERT INTO trailers(name, url) VALUES('{a[0]}', '{a[1]}')")
+            con.commit()
+            bot.send_message(m.chat.id, f"Фильм {a[0]} успешно добавлен")
+        except Exception as error:
+            bot.send_message(f"error:{error}")
+    else:
+        bot.send_message(m.chat.id, "У вас нет доступа")
 
 
 @bot.message_handler(commands=['watch_list'])
