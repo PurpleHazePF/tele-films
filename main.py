@@ -1,7 +1,7 @@
 import telebot
 from telebot import types
 import imdb
-from config import apytoken
+from config import apytoken, trailers
 from films_info import find_film
 from actors_info import find_person
 from data.users import Film, User
@@ -30,7 +30,7 @@ def start(m):
 
 @bot.message_handler(commands=['help'])
 def help(m):
-    bot.send_message(m.chat.id, "*Справка по командам:*\n/get_film - получить фильм\n/person - информация о актёре\n/watch_list - список просмотренного", parse_mode="Markdown")
+    bot.send_message(m.chat.id, "*Справка по командам:*\n/get_film - /film\n/person - информация о актёре\n/watch_list - список просмотренного", parse_mode="Markdown")
 
 
 @bot.message_handler(commands=['film'])
@@ -46,6 +46,18 @@ def get_film(m):
     keyboard1.add(button1, button2, button3, button4)
     bot.send_photo(m.chat.id, poster)
     bot.send_message(m.chat.id, req[0].format(m.from_user, bot.get_me()), parse_mode='html', reply_markup=keyboard1)
+
+
+@bot.message_handler(commands=['trailer'])
+def get_trailer(m):
+    film = " ".join(m.text.split()[1:])
+    try:
+        res = trailers[film.lower()]
+        bot.send_message(m.chat.id, f"Трейлер к фильму {film}")
+        bot.send_message(m.chat.id, res)
+    except Exception:
+        bot.send_message(m.chat.id, "Этого трейлера пока нету в нашей базе")
+        bot.send_sticker(m.chat.id, "CAACAgIAAxkBAAEEaChiUBeRMyt-o2uxOc1mvJSIsUgKAAPZFwACq_whStzEfsp_ztIeIwQ")
 
 
 @bot.message_handler(commands=['watch_list'])
