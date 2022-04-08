@@ -28,6 +28,10 @@ def start(m):
     bot.send_message(m.chat.id, f'Привет {m.from_user.first_name}!')
     bot.send_message(m.chat.id, "Какой фильм вы бы хотели посмотреть")
 
+@bot.message_handler(commands=['help'])
+def help(m):
+    bot.send_message(m.chat.id, "*Справка по командам:*\n/get_film - получить фильм\n/person - информация о актёре\n/watch_list - список просмотренного", parse_mode="Markdown")
+
 
 @bot.message_handler(commands=['film'])
 def get_film(m):
