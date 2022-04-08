@@ -12,7 +12,7 @@ moviesDB = imdb.IMDb()
 def find_film(f_name, user_id):
     try:
         db_sess = create_session()
-        api_client = KinopoiskApiClient("74c7edf5-27c8-4dd1-99ae-a96b22f7457a")
+        api_client = KinopoiskApiClient("74c7edf5-27c8-4dd1-99ae-a96b22f7457a")  # api token
         movies = moviesDB.search_movie(f_name.lower())
         f_id = movies[0].getID()
         movie = moviesDB.get_movie(f_id)

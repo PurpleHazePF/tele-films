@@ -62,13 +62,13 @@ def get_similar_film(m):
     f_name = ''.join(m.text.split()[1:])
     movie_list = Movie.objects.search(f_name)
     id = movie_list[0].id
-    api_client = KinopoiskApiClient("74c7edf5-27c8-4dd1-99ae-a96b22f7457a")
+    api_client = KinopoiskApiClient("74c7edf5-27c8-4dd1-99ae-a96b22f7457a")  # api token
     request = RelatedFilmRequest(id)
     response = api_client.films.send_related_film_request(request)
     im_pool = [types.InputMediaPhoto(i.poster_url) for i in response.items[:5]]
     text_mes = ''
     for i, j in enumerate(response.items[:5]):
-        text_mes += f'{i+1})'
+        text_mes += f'{i + 1})'
         text_mes += reduced_find_film(j.film_id)
         text_mes += f'\n\n'
     bot.send_media_group(m.chat.id, im_pool)
