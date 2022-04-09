@@ -42,12 +42,13 @@ def find_film(f_name, user_id):
                f"Жанр: {movie['genres'][0]}, {movie['genres'][1]}\nГод выпуска: {movie['year']}\n" \
                f"Рейтинг IMDb: <b>{movie['rating']}</b>\n" \
                f"Страна: {movie['countries'][0]}\n" \
-               f"Сценарист: {movie['writers'][0]}"
+               f"Сценарист: {movie['writers'][0]}\n" \
+               f"Ссылка: <a>{response.film.web_url}</a>"
         return text, f_id
     except Exception as e:
         return f'{e.__class__.__name__}'
 
-    
+
 def reduced_find_film(f_kn_id):
     api_client = KinopoiskApiClient("74c7edf5-27c8-4dd1-99ae-a96b22f7457a")
     request = FilmRequest(f_kn_id)
@@ -59,4 +60,5 @@ def reduced_find_film(f_kn_id):
            f"Рейтинг Кинопоиска: <b>{response.film.rating_kinopoisk}</b>\n" \
            f"Описание: <b>{response.film.short_description}</b>\n" \
            f"Страна: {response.film.countries[0].country}\n"
-    return text
+    url = response.film.web_url
+    return text, url

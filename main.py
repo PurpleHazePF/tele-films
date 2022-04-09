@@ -38,7 +38,8 @@ def start(m):
 @bot.message_handler(commands=['help'])
 def help(m):
     bot.send_message(m.chat.id,
-                     "<b>Справка по командам:</b>\n/film - получить фильм\n/person - информация о актёре\n/watch_list - список просмотренного\n/trailer - посмотреть трейлер к фильму", parse_mode='html')
+                     "<b>Справка по командам:</b>\n/film - получить фильм\n/person - информация о актёре\n/watch_list - список просмотренного\n/trailer - посмотреть трейлер к фильму",
+                     parse_mode='html')
 
 
 @bot.message_handler(commands=['film'])
@@ -55,7 +56,7 @@ def get_film(m):
     bot.send_photo(m.chat.id, poster)
     bot.send_message(m.chat.id, req[0].format(m.from_user, bot.get_me()), parse_mode='html', reply_markup=keyboard1)
 
-    
+
 @bot.message_handler(commands=['sim_films'])
 def get_similar_film(m):
     f_name = ''.join(m.text.split()[1:])
@@ -68,7 +69,9 @@ def get_similar_film(m):
     text_mes = ''
     for i, j in enumerate(response.items[:5]):
         text_mes += f'{i + 1})'
-        text_mes += reduced_find_film(j.film_id)
+        resp = reduced_find_film(j.film_id)
+        text_mes += resp[0]
+        text_mes += resp[1]
         text_mes += f'\n\n'
     bot.send_media_group(m.chat.id, im_pool)
     bot.send_message(m.chat.id, text_mes.format(m.from_user, bot.get_me()), parse_mode='html')
@@ -140,7 +143,7 @@ def callback(call):
                     curr_id = int(call.data[2:])
                     film = moviesDB.get_movie(curr_id)
                     text = ''
-                    for i, j in enumerate(film['cast']):
+                    for i, j in enumerate(film['cast'][:10]):
                         text += f'{i + 1}) <b>{j}</b>\n'
                     bot.send_message(call.message.chat.id, text.format(call.message.from_user, bot.get_me()),
                                      parse_mode='html')
