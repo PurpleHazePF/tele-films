@@ -1,4 +1,7 @@
 import imdb
+from kinopoisk_unofficial.kinopoisk_api_client import KinopoiskApiClient
+from kinopoisk_unofficial.request.films.film_request import FilmRequest
+from kinopoisk.movie import Movie
 import requests
 from data.users import Film
 from data.db_session import create_session
