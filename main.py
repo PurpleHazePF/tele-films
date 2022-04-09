@@ -58,9 +58,9 @@ def get_trailer(m):
     film = " ".join(m.text.split()[1:])
     try:
         a = cur.execute(f"""SELECT url FROM trailers
-        WHERE name = '{film.lower()}'""").fetchall()
+        WHERE name = '{film.lower()}'""").fetchall()[0][0]
         bot.send_message(m.chat.id, f"Трейлер к фильму {film}")
-        bot.send_message(m.chat.id, a[0][0])
+        bot.send_message(m.chat.id, a)
     except Exception:
         bot.send_message(m.chat.id, "Этого трейлера пока нету в нашей базе")
         bot.send_sticker(m.chat.id, "CAACAgIAAxkBAAEEaChiUBeRMyt-o2uxOc1mvJSIsUgKAAPZFwACq_whStzEfsp_ztIeIwQ")
