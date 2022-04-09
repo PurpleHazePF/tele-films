@@ -2,12 +2,15 @@ import telebot
 from telebot import types
 import imdb
 from config import apytoken, staff
-from films_info import find_film
+from films_info import find_film, reduced_find_film
 from actors_info import find_person
 from data.users import Film, User
 from data.db_session import global_init, create_session
 import wikipedia
 import sqlite3
+from kinopoisk.movie import Movie
+from kinopoisk_unofficial.kinopoisk_api_client import KinopoiskApiClient
+from kinopoisk_unofficial.request.films.related_film_request import RelatedFilmRequest
 
 language = "ru"
 wikipedia.set_lang(language)
@@ -51,6 +54,24 @@ def get_film(m):
     keyboard1.add(button1, button2, button3, button4)
     bot.send_photo(m.chat.id, poster)
     bot.send_message(m.chat.id, req[0].format(m.from_user, bot.get_me()), parse_mode='html', reply_markup=keyboard1)
+
+    
+@bot.message_handler(commands=['sim_films'])
+def get_similar_film(m):
+    f_name = ''.join(m.text.split()[1:])
+    movie_list = Movie.objects.search(f_name)
+    id = movie_list[0].id
+    api_client = KinopoiskApiClient("74c7edf5-27c8-4dd1-99ae-a96b22f7457a")  # api token
+    request = RelatedFilmRequest(id)
+    response = api_client.films.send_related_film_request(request)
+    im_pool = [types.InputMediaPhoto(i.poster_url) for i in response.items[:5]]
+    text_mes = ''
+    for i, j in enumerate(response.items[:5]):
+        text_mes += f'{i + 1})'
+        text_mes += reduced_find_film(j.film_id)
+        text_mes += f'\n\n'
+    bot.send_media_group(m.chat.id, im_pool)
+    bot.send_message(m.chat.id, text_mes.format(m.from_user, bot.get_me()), parse_mode='html')
 
 
 @bot.message_handler(commands=['trailer'])
