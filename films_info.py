@@ -9,10 +9,17 @@ moviesDB = imdb.IMDb()
 def find_film(f_name, user_id):
     try:
         db_sess = create_session()
+        api_client = KinopoiskApiClient("74c7edf5-27c8-4dd1-99ae-a96b22f7457a")  # api token
         movies = moviesDB.search_movie(f_name.lower())
         f_id = movies[0].getID()
         movie = moviesDB.get_movie(f_id)
-        url = requests.get(movie['cover url'])
+        # url = requests.get(movie['cover url'])
+        # poster = url.content
+        movie_list = Movie.objects.search(movie['localized title'])
+        id = movie_list[0].id
+        request = FilmRequest(id)
+        response = api_client.films.send_film_request(request)
+        url = requests.get(response.film.poster_url)
         poster = url.content
         f = open('poster.jpg', 'wb')
         f.truncate()
