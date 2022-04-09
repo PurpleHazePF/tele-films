@@ -96,7 +96,7 @@ def addtrailer(m):
             con.commit()
             bot.send_message(m.chat.id, f"Фильм {a[0]} успешно добавлен")
         except Exception as error:
-            bot.send_message(f"error:{error}")
+            bot.send_message(m.chat.id, f"error:{error}")
     else:
         bot.send_message(m.chat.id, "У вас нет доступа")
 
