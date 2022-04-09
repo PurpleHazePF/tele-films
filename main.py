@@ -31,9 +31,11 @@ def start(m):
     bot.send_message(m.chat.id, f'Привет {m.from_user.first_name}!')
     bot.send_message(m.chat.id, "Какой фильм вы бы хотели посмотреть")
 
+
 @bot.message_handler(commands=['help'])
 def help(m):
-    bot.send_message(m.chat.id, "*Справка по командам:*\n/get_film - /film\n/person - информация о актёре\n/watch_list - список просмотренного", parse_mode="Markdown")
+    bot.send_message(m.chat.id,
+                     "<b>Справка по командам:</b>\n/film - получить фильм\n/person - информация о актёре\n/watch_list - список просмотренного\n/trailer - посмотреть трейлер к фильму", parse_mode='html')
 
 
 @bot.message_handler(commands=['film'])
@@ -62,6 +64,7 @@ def get_trailer(m):
     except Exception:
         bot.send_message(m.chat.id, "Этого трейлера пока нету в нашей базе")
         bot.send_sticker(m.chat.id, "CAACAgIAAxkBAAEEaChiUBeRMyt-o2uxOc1mvJSIsUgKAAPZFwACq_whStzEfsp_ztIeIwQ")
+
 
 @bot.message_handler(commands=['addtrailer'])
 def addtrailer(m):
