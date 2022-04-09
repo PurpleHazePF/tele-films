@@ -58,5 +58,5 @@ def reduced_find_film(f_kn_id):
            f"Рейтинг IMDb: <b>{response.film.rating_imdb}</b>\n" \
            f"Рейтинг Кинопоиска: <b>{response.film.rating_kinopoisk}</b>\n" \
            f"Описание: <b>{response.film.short_description}</b>\n" \
-           f"Страна: {response.film.countries[0].country, response.film.countries[1].country}\n"
+           f"Страна: {response.film.countries[0].country}\n"
     return text
