@@ -171,13 +171,14 @@ def callback(call):
                             if 'Трейлер' in str(j.name):
                                 tr_url = j.url
                                 break
-                    else:
+                    if tr_url == '':
                         bot.send_message(call.message.chat.id, 'Мы не смогли найти трейлер')
                         bot.send_sticker(call.message.chat.id,
                                          "CAACAgIAAxkBAAEEaChiUBeRMyt-o2uxOc1mvJSIsUgKAAPZFwACq_whStzEfsp_ztIeIwQ")
-                    text = f'Трейлер: <a>{tr_url}</a>'
-                    bot.send_message(call.message.chat.id, text.format(call.message.from_user, bot.get_me()),
-                                     parse_mode='html')
+                    else:
+                        text = f'Трейлер: <a>{tr_url}</a>'
+                        bot.send_message(call.message.chat.id, text.format(call.message.from_user, bot.get_me()),
+                                         parse_mode='html')
 
     except Exception:
         bot.send_message(call.message.chat.id, 'Error callback')
