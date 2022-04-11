@@ -33,6 +33,7 @@ def find_film(f_name, user_id):
             film.film_id = int(f_id)
             film.us_tg_id = int(user_id)
             film.loc_title = movie['localized title']
+            film.url = response.film.web_url
             db_sess.add(film)
             db_sess.commit()
         text = f"Название фильма: <b>{movie['localized title']}</b>\n" \

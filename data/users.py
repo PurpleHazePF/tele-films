@@ -20,5 +20,6 @@ class Film(SqlAlchemyBase):
     rating = sqlalchemy.Column(sqlalchemy.Integer, nullable=True)
     viewed = sqlalchemy.Column(sqlalchemy.BOOLEAN, default=False)
     watch_list = sqlalchemy.Column(sqlalchemy.BOOLEAN, default=False)
+    url = sqlalchemy.Column(sqlalchemy.String, nullable=True)
     us_tg_id = sqlalchemy.Column(sqlalchemy.Integer, sqlalchemy.ForeignKey("users.tg_id"))
     user = orm.relation('User')

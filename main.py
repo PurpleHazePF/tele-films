@@ -15,7 +15,7 @@ from kinopoisk_unofficial.request.films.film_video_request import FilmVideoReque
 
 language = "ru"
 wikipedia.set_lang(language)
-bot = telebot.TeleBot("5250938790:AAG2GYrugR1Sa-uxWn6MbaybWcof8d_Bgjc")
+bot = telebot.TeleBot(apytoken)
 moviesDB = imdb.IMDb()
 localdb = 'db/films_info'
 global_init(localdb)
@@ -27,7 +27,9 @@ cur = con.cursor()
 @bot.message_handler(commands=['start'])
 def start(m):
     db_sess = create_session()
-    if db_sess.query(User).filter(User.tg_id == m.from_user.id) is None:
+    try:
+        pers = db_sess.query(User).filter(User.tg_id == m.from_user.id)[0]
+    except Exception:
         user = User()
         user.tg_id = m.from_user.id
         db_sess.add(user)
@@ -115,7 +117,7 @@ def get_watch_list(m):
     text = ''
     for i, j in enumerate(films):
         if j.watch_list:
-            text += f'{i + 1})  <b>{j.loc_title}</b>\n'
+            text += f'{i + 1})  <b>{j.loc_title}</b>: {j.url}\n'
     bot.send_message(m.chat.id, text, parse_mode='html')
 
 
@@ -163,7 +165,7 @@ def callback(call):
                     response = api_client.films.send_film_video_request(request)
                     tr_url = ''
                     for i in response.items:
-                        if 'дублированный' in i.name:
+                        if 'дублированный' in i.name and 'youtube' in str(i.url):
                             tr_url = i.url
                             break
                     if tr_url == '':
