@@ -11,10 +11,11 @@ import sqlite3
 from kinopoisk.movie import Movie
 from kinopoisk_unofficial.kinopoisk_api_client import KinopoiskApiClient
 from kinopoisk_unofficial.request.films.related_film_request import RelatedFilmRequest
+from kinopoisk_unofficial.request.films.film_video_request import FilmVideoRequest
 
 language = "ru"
 wikipedia.set_lang(language)
-bot = telebot.TeleBot(apytoken)
+bot = telebot.TeleBot("5250938790:AAG2GYrugR1Sa-uxWn6MbaybWcof8d_Bgjc")
 moviesDB = imdb.IMDb()
 localdb = 'db/films_info'
 global_init(localdb)
@@ -52,7 +53,8 @@ def get_film(m):
     button2 = types.InlineKeyboardButton('Подробнее', callback_data=f'q2{req[1]}')  # id фильма к которому она привязана
     button3 = types.InlineKeyboardButton('Актёры', callback_data=f'q3{req[1]}')
     button4 = types.InlineKeyboardButton('Буду смотреть', callback_data=f'q4{req[1]}')
-    keyboard1.add(button1, button2, button3, button4)
+    button5 = types.InlineKeyboardButton('Трейлер', callback_data=f'q5{req[2]}')
+    keyboard1.add(button1, button2, button3, button4, button5)
     bot.send_photo(m.chat.id, poster)
     bot.send_message(m.chat.id, req[0].format(m.from_user, bot.get_me()), parse_mode='html', reply_markup=keyboard1)
 
@@ -155,6 +157,20 @@ def callback(call):
                     title = fm.loc_title
                     db_sess.commit()
                     bot.send_message(call.message.chat.id, f'Фильм "{title}" добавлен в лист ожидания')
+                elif call.data[:2] == 'q5':
+                    api_client = KinopoiskApiClient("74c7edf5-27c8-4dd1-99ae-a96b22f7457a")
+                    request = FilmVideoRequest(int(call.data[2:]))
+                    response = api_client.films.send_film_video_request(request)
+                    tr_url = ''
+                    for i in response.items:
+                        if 'дублированный' in i.name:
+                            tr_url = i.url
+                            break
+                    if tr_url == '':
+                        tr_url = response.items[0].url
+                    text = f'Трейлер: <a>{tr_url}</a>'
+                    bot.send_message(call.message.chat.id, text.format(call.message.from_user, bot.get_me()),
+                                     parse_mode='html')
 
     except Exception:
         bot.send_message(call.message.chat.id, 'Error callback')

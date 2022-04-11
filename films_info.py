@@ -44,7 +44,7 @@ def find_film(f_name, user_id):
                f"Страна: {movie['countries'][0]}\n" \
                f"Сценарист: {movie['writers'][0]}\n" \
                f"Ссылка: <a>{response.film.web_url}</a>"
-        return text, f_id
+        return text, f_id, id
     except Exception as e:
         return f'{e.__class__.__name__}'
 
