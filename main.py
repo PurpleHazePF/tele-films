@@ -15,7 +15,7 @@ from kinopoisk_unofficial.request.films.film_video_request import FilmVideoReque
 
 language = "ru"
 wikipedia.set_lang(language)
-bot = telebot.TeleBot(apytoken)
+bot = telebot.TeleBot('5250938790:AAG2GYrugR1Sa-uxWn6MbaybWcof8d_Bgjc')
 moviesDB = imdb.IMDb()
 localdb = 'db/films_info'
 global_init(localdb)
@@ -47,7 +47,7 @@ def help(m):
 
 @bot.message_handler(commands=['film'])
 def get_film(m):
-    f_name = ''.join(m.text.split()[1:])
+    f_name = ' '.join(m.text.split()[1:])
     req = find_film(f_name, m.json['from']['id'])
     poster = open('poster.jpg', 'rb')
     keyboard1 = types.InlineKeyboardMarkup(row_width=3)
@@ -63,7 +63,7 @@ def get_film(m):
 
 @bot.message_handler(commands=['sim_films'])
 def get_similar_film(m):
-    f_name = ''.join(m.text.split()[1:])
+    f_name = ' '.join(m.text.split()[1:])
     movie_list = Movie.objects.search(f_name)
     id = movie_list[0].id
     api_client = KinopoiskApiClient("74c7edf5-27c8-4dd1-99ae-a96b22f7457a")  # api token
@@ -127,7 +127,8 @@ def get_person(m):
     req = find_person(p_name)
     poster = open('poster.jpg', 'rb')
     bot.send_photo(m.chat.id, poster)
-    bot.send_message(m.chat.id, req)
+    text = req[0] + '\n' + f'<a>{req[1]}</a>'
+    bot.send_message(m.chat.id, text, parse_mode='html')
 
 
 @bot.callback_query_handler(func=lambda call: True)
