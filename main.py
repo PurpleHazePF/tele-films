@@ -10,6 +10,7 @@ import wikipedia
 import sqlite3
 from random import choice, randint
 import datetime
+import logging
 from kinopoisk.movie import Movie
 from kinopoisk_unofficial.kinopoisk_api_client import KinopoiskApiClient
 from kinopoisk_unofficial.request.films.related_film_request import RelatedFilmRequest
@@ -22,13 +23,17 @@ from kinopoisk_unofficial.request.films.filters_request import FiltersRequest
 
 language = "ru"
 wikipedia.set_lang(language)
-bot = telebot.TeleBot('5250938790:AAG2GYrugR1Sa-uxWn6MbaybWcof8d_Bgjc')
+bot = telebot.TeleBot(apytoken)
 moviesDB = imdb.IMDb()
 localdb = 'db/films_info'
 global_init(localdb)
 current_film = 0
 con = sqlite3.connect('trailers.db', check_same_thread=False)
 cur = con.cursor()
+logging.basicConfig(
+    filename='bot_logs.log',
+    format='%(asctime)s %(levelname)s %(message)s',
+    level=logging.INFO)
 
 
 @bot.message_handler(commands=['start'])
@@ -36,11 +41,12 @@ def start(m, flag=0):
     db_sess = create_session()
     try:
         pers = db_sess.query(User).filter(User.tg_id == m.from_user.id)[0]
-    except Exception:
+    except Exception as x:
         user = User()
         user.tg_id = m.from_user.id
         db_sess.add(user)
         db_sess.commit()
+        logging.error(f"Пользователь {m.from_user.username} вызвал ошибку {x}")
     bot.send_message(m.chat.id, f'Привет {m.from_user.first_name}!')
     bot.send_message(m.chat.id, "Какой фильм вы бы хотели посмотреть")
 
@@ -76,7 +82,8 @@ def get_film(m, flag=0):
         else:
             bot.send_message(m.chat.id, "Ничего не найдено")
             bot.send_sticker(m.chat.id, "CAACAgIAAxkBAAEEaChiUBeRMyt-o2uxOc1mvJSIsUgKAAPZFwACq_whStzEfsp_ztIeIwQ")
-    except Exception:
+    except Exception as x:
+        logging.error(f"Пользователь {m.from_user.username} вызвал ошибку {x}")
         bot.send_message(m.chat.id, "Произошла ошибка")
         bot.send_sticker(m.chat.id, "CAACAgIAAxkBAAEEaChiUBeRMyt-o2uxOc1mvJSIsUgKAAPZFwACq_whStzEfsp_ztIeIwQ")
 
@@ -184,7 +191,8 @@ def get_similar_film(m, flag=0):
             text_mes += f'\n\n'
         bot.send_media_group(m.chat.id, im_pool)
         bot.send_message(m.chat.id, text_mes.format(m.from_user, bot.get_me()), parse_mode='html')
-    except Exception:
+    except Exception as x:
+        logging.error(f"Пользователь {m.from_user.username} вызвал ошибку {x}")
         bot.send_message(m.chat.id, "Произошла ошибка")
         bot.send_sticker(m.chat.id, "CAACAgIAAxkBAAEEaChiUBeRMyt-o2uxOc1mvJSIsUgKAAPZFwACq_whStzEfsp_ztIeIwQ")
 
@@ -197,7 +205,8 @@ def get_trailer(m):
         WHERE name = '{film.lower()}'""").fetchall()[0][0]
         bot.send_message(m.chat.id, f"Трейлер к фильму {film}")
         bot.send_message(m.chat.id, a)
-    except Exception:
+    except Exception as x:
+        logging.error(f"Пользователь {m.from_user.username} вызвал ошибку {x}")
         bot.send_message(m.chat.id, "Этого трейлера пока нету в нашей базе")
         bot.send_sticker(m.chat.id, "CAACAgIAAxkBAAEEaChiUBeRMyt-o2uxOc1mvJSIsUgKAAPZFwACq_whStzEfsp_ztIeIwQ")
 
@@ -211,6 +220,7 @@ def addtrailer(m):
             con.commit()
             bot.send_message(m.chat.id, f"Фильм {a[0]} успешно добавлен")
         except Exception as error:
+            logging.error(f"Пользователь {m.from_user.username} вызвал ошибку {error}")
             bot.send_message(m.chat.id, f"error:{error}")
     else:
         bot.send_message(m.chat.id, "У вас нет доступа")
@@ -245,7 +255,8 @@ def get_person(m, flag=0):
         else:
             bot.send_message(m.chat.id, "Такой человек не найден")
             bot.send_sticker(m.chat.id, "CAACAgIAAxkBAAEEaChiUBeRMyt-o2uxOc1mvJSIsUgKAAPZFwACq_whStzEfsp_ztIeIwQ")
-    except Exception:
+    except Exception as x:
+        logging.error(f"Пользователь {m.from_user.username} вызвал ошибку {x}")
         bot.send_message(m.chat.id, "Произошла ошибка")
         bot.send_sticker(m.chat.id, "CAACAgIAAxkBAAEEaChiUBeRMyt-o2uxOc1mvJSIsUgKAAPZFwACq_whStzEfsp_ztIeIwQ")
 
@@ -313,7 +324,8 @@ def callback(call):
                         bot.send_message(call.message.chat.id, text.format(call.message.from_user, bot.get_me()),
                                          parse_mode='html')
 
-    except Exception:
+    except Exception as x:
+        logging.error(f"Пользователь {call.from_user.username} вызвал ошибку {x}")
         bot.send_message(call.message.chat.id, 'Error callback')
 
 
