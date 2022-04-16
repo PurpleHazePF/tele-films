@@ -2,6 +2,7 @@ import imdb
 from kinopoisk_unofficial.kinopoisk_api_client import KinopoiskApiClient
 from kinopoisk_unofficial.request.films.film_request import FilmRequest
 from kinopoisk.movie import Movie
+from kinopoisk_unofficial.request.films.box_office_request import BoxOfficeRequest
 import requests
 from data.users import Film
 from data.db_session import create_session
@@ -16,8 +17,6 @@ def find_film(f_name, user_id):
         movies = moviesDB.search_movie(f_name.lower())
         f_id = movies[0].getID()
         movie = moviesDB.get_movie(f_id)
-        # url = requests.get(movie['cover url'])
-        # poster = url.content
         movie_list = Movie.objects.search(movie['localized title'])
         id = movie_list[0].id
         request = FilmRequest(id)
@@ -36,6 +35,9 @@ def find_film(f_name, user_id):
             film.url = response.film.web_url
             db_sess.add(film)
             db_sess.commit()
+        film = db_sess.query(Film).filter(Film.us_tg_id == user_id, Film.film_id == f_id).all()[0]
+        request = BoxOfficeRequest(id)
+        response2 = api_client.films.send_box_office_request(request)
         text = f"Название фильма: <b>{movie['localized title']}</b>\n" \
                f"Оригинальное название: <b>{movie['original title']}</b>\n" \
                f"Режиссер: <b>{movie['directors'][0]}</b>\n" \
@@ -44,10 +46,13 @@ def find_film(f_name, user_id):
                f"Рейтинг IMDb: <b>{movie['rating']}</b>\n" \
                f"Страна: {movie['countries'][0]}\n" \
                f"Сценарист: {movie['writers'][0]}\n" \
+               f"Бюджет: {response2.items[0].amount}{response2.items[0].symbol}\n" \
+               f"Кассовые сборы: {response2.items[2].amount}{response2.items[2].symbol}\n" \
+               f"Ваша оценка: {film.rating}\n" \
                f"Ссылка: <a>{response.film.web_url}</a>"
         return text, f_id, id
-    except Exception as e:
-        return f'{e.__class__.__name__}'
+    except Exception:
+        return ['Error']
 
 
 def reduced_find_film(f_kn_id):
@@ -64,5 +69,5 @@ def reduced_find_film(f_kn_id):
                f"Страна: {response.film.countries[0].country}\n"
         url = response.film.web_url
         return text, url
-    except Exception as e:
-        return e
+    except Exception:
+        return ['Error']

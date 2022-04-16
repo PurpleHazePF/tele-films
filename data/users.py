@@ -7,6 +7,10 @@ class User(SqlAlchemyBase):
     __tablename__ = 'users'
 
     tg_id = sqlalchemy.Column(sqlalchemy.Integer, nullable=True, unique=True, primary_key=True)
+    year = sqlalchemy.Column(sqlalchemy.Integer, nullable=True)
+    genre = sqlalchemy.Column(sqlalchemy.String, nullable=True)
+    genre_id = sqlalchemy.Column(sqlalchemy.Integer, nullable=True)
+    rating = sqlalchemy.Column(sqlalchemy.Integer, nullable=True)
     film = orm.relation("Film", back_populates='user')
 
 

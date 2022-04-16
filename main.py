@@ -8,10 +8,17 @@ from data.users import Film, User
 from data.db_session import global_init, create_session
 import wikipedia
 import sqlite3
+from random import choice, randint
+import datetime
 from kinopoisk.movie import Movie
 from kinopoisk_unofficial.kinopoisk_api_client import KinopoiskApiClient
 from kinopoisk_unofficial.request.films.related_film_request import RelatedFilmRequest
 from kinopoisk_unofficial.request.films.film_video_request import FilmVideoRequest
+from kinopoisk_unofficial.request.staff.person_request import PersonRequest
+from kinopoisk_unofficial.model.filter_order import FilterOrder
+from kinopoisk_unofficial.model.filter_genre import FilterGenre
+from kinopoisk_unofficial.request.films.film_search_by_filters_request import FilmSearchByFiltersRequest
+from kinopoisk_unofficial.request.films.filters_request import FiltersRequest
 
 language = "ru"
 wikipedia.set_lang(language)
@@ -25,7 +32,7 @@ cur = con.cursor()
 
 
 @bot.message_handler(commands=['start'])
-def start(m):
+def start(m, flag=0):
     db_sess = create_session()
     try:
         pers = db_sess.query(User).filter(User.tg_id == m.from_user.id)[0]
@@ -46,39 +53,140 @@ def help(m):
 
 
 @bot.message_handler(commands=['film'])
-def get_film(m):
-    f_name = ' '.join(m.text.split()[1:])
-    req = find_film(f_name, m.json['from']['id'])
-    poster = open('poster.jpg', 'rb')
-    keyboard1 = types.InlineKeyboardMarkup(row_width=3)
-    button1 = types.InlineKeyboardButton('Оценить', callback_data=f'q1{req[1]}')  # в названии кнопки хранится
-    button2 = types.InlineKeyboardButton('Подробнее', callback_data=f'q2{req[1]}')  # id фильма к которому она привязана
-    button3 = types.InlineKeyboardButton('Актёры', callback_data=f'q3{req[1]}')
-    button4 = types.InlineKeyboardButton('Буду смотреть', callback_data=f'q4{req[1]}')
-    button5 = types.InlineKeyboardButton('Трейлер', callback_data=f'q5{req[2]}')
-    keyboard1.add(button1, button2, button3, button4, button5)
-    bot.send_photo(m.chat.id, poster)
-    bot.send_message(m.chat.id, req[0].format(m.from_user, bot.get_me()), parse_mode='html', reply_markup=keyboard1)
+def get_film(m, flag=0):
+    try:
+        if flag == 1:
+            f_name = ' '.join(m.text.split()[2:])
+        else:
+            f_name = ' '.join(m.text.split()[1:])
+        req = find_film(f_name, m.json['from']['id'])
+        if req[0] != 'Error':
+            poster = open('poster.jpg', 'rb')
+            keyboard1 = types.InlineKeyboardMarkup(row_width=3)
+            button1 = types.InlineKeyboardButton('Оценить', callback_data=f'q1{req[1]}')  # в названии кнопки хранится
+            button2 = types.InlineKeyboardButton('Подробнее',
+                                                 callback_data=f'q2{req[1]}')  # id фильма к которому она привязана
+            button3 = types.InlineKeyboardButton('Актёры', callback_data=f'q3{req[1]}')
+            button4 = types.InlineKeyboardButton('Буду смотреть', callback_data=f'q4{req[1]}')
+            button5 = types.InlineKeyboardButton('Трейлер', callback_data=f'q5{req[2]}')
+            keyboard1.add(button1, button2, button3, button4, button5)
+            bot.send_photo(m.chat.id, poster)
+            bot.send_message(m.chat.id, req[0].format(m.from_user, bot.get_me()), parse_mode='html',
+                             reply_markup=keyboard1)
+        else:
+            bot.send_message(m.chat.id, "Ничего не найдено")
+            bot.send_sticker(m.chat.id, "CAACAgIAAxkBAAEEaChiUBeRMyt-o2uxOc1mvJSIsUgKAAPZFwACq_whStzEfsp_ztIeIwQ")
+    except Exception:
+        bot.send_message(m.chat.id, "Произошла ошибка")
+        bot.send_sticker(m.chat.id, "CAACAgIAAxkBAAEEaChiUBeRMyt-o2uxOc1mvJSIsUgKAAPZFwACq_whStzEfsp_ztIeIwQ")
+
+
+@bot.message_handler(commands=['recommend'])
+def get_recommendation_film(m):
+    bot.send_message(m.chat.id, 'Фильм с какого года вы бы хотели посмотреть?')
+    bot.register_next_step_handler(m, get_year)
+
+
+def get_year(m):
+    y = m.text
+    if y in ['без разници', 'на ваше усмотрение', 'любой']:
+        y = randint(1950, datetime.date.today().year)
+    else:
+        try:
+            y = int(y)
+            if y < 1896:
+                raise ValueError
+        except ValueError:
+            y = randint(1950, datetime.date.today().year)
+            print(y)
+            bot.send_message(m.chat.id, 'Вы ввели некорректный год, поэтому я выбрал его за вас')
+    db_sess = create_session()
+    user = db_sess.query(User).filter(User.tg_id == m.from_user.id).all()[0]
+    user.year = y
+    db_sess.commit()
+    bot.send_message(m.chat.id, 'Какой жанр вы предпочитаете?')
+    bot.register_next_step_handler(m, get_genre)
+
+
+def get_genre(m):
+    api_client = KinopoiskApiClient("74c7edf5-27c8-4dd1-99ae-a96b22f7457a")  # api token
+    request = FiltersRequest()
+    response = api_client.films.send_filters_request(request)
+    pool = [(i.id, i.genre) for i in response.genres if i.genre.lower() == m.text.lower()]
+    if len(pool) > 0:
+        genre = pool[0]
+    else:
+        rand_genre = choice(response.genres)
+        genre = (rand_genre.id, rand_genre.genre)
+        bot.send_message(m.chat.id, 'такого жанра не нашлось, поэтому я выбрал случайный')
+    db_sess = create_session()
+    user = db_sess.query(User).filter(User.tg_id == m.from_user.id).all()[0]
+    user.genre = genre[1]
+    user.genre_id = genre[0]
+    db_sess.commit()
+    bot.send_message(m.chat.id, 'Какая минимальная оценка должна быть у этого фильма?')
+    bot.register_next_step_handler(m, get_min_rating)
+
+
+def get_min_rating(m):
+    try:
+        rating = float(m.text)
+    except ValueError:
+        rating = 5.5
+        bot.send_message(m.chat.id, 'Вы ввели некорректную оценку, по умолчанию оценка >= 5.5')
+    db_sess = create_session()
+    user = db_sess.query(User).filter(User.tg_id == m.from_user.id).all()[0]
+    user.rating = rating
+    db_sess.commit()
+    try:
+        api_client = KinopoiskApiClient("74c7edf5-27c8-4dd1-99ae-a96b22f7457a")  # api token
+        request = FilmSearchByFiltersRequest()
+        request.year_from = user.year
+        request.rating_from = user.rating
+        request.order = FilterOrder.RATING
+        request.add_genre(FilterGenre(user.genre_id, genre=user.genre))
+        response = api_client.films.send_film_search_by_filters_request(request)
+        im_pool = [types.InputMediaPhoto(i.poster_url) for i in response.items[:5]]
+        text_mes = ''
+        for i, j in enumerate(response.items[:5]):
+            text_mes += f'{i + 1})'
+            resp = reduced_find_film(j.kinopoisk_id)
+            text_mes += resp[0]
+            text_mes += resp[1]
+            text_mes += f'\n\n'
+        bot.send_media_group(m.chat.id, im_pool)
+        bot.send_message(m.chat.id, text_mes.format(m.from_user, bot.get_me()), parse_mode='html')
+    except Exception as e:
+        print(e)
+        bot.send_message(m.chat.id, "Произошла ошибка")
+        bot.send_sticker(m.chat.id, "CAACAgIAAxkBAAEEaChiUBeRMyt-o2uxOc1mvJSIsUgKAAPZFwACq_whStzEfsp_ztIeIwQ")
 
 
 @bot.message_handler(commands=['sim_films'])
-def get_similar_film(m):
-    f_name = ' '.join(m.text.split()[1:])
-    movie_list = Movie.objects.search(f_name)
-    id = movie_list[0].id
-    api_client = KinopoiskApiClient("74c7edf5-27c8-4dd1-99ae-a96b22f7457a")  # api token
-    request = RelatedFilmRequest(id)
-    response = api_client.films.send_related_film_request(request)
-    im_pool = [types.InputMediaPhoto(i.poster_url) for i in response.items[:5]]
-    text_mes = ''
-    for i, j in enumerate(response.items[:5]):
-        text_mes += f'{i + 1})'
-        resp = reduced_find_film(j.film_id)
-        text_mes += resp[0]
-        text_mes += resp[1]
-        text_mes += f'\n\n'
-    bot.send_media_group(m.chat.id, im_pool)
-    bot.send_message(m.chat.id, text_mes.format(m.from_user, bot.get_me()), parse_mode='html')
+def get_similar_film(m, flag=0):
+    try:
+        if flag == 1:
+            f_name = ' '.join(m.text.split()[4:])
+        else:
+            f_name = ' '.join(m.text.split()[1:])
+        movie_list = Movie.objects.search(f_name)
+        id = movie_list[0].id
+        api_client = KinopoiskApiClient("74c7edf5-27c8-4dd1-99ae-a96b22f7457a")  # api token
+        request = RelatedFilmRequest(id)
+        response = api_client.films.send_related_film_request(request)
+        im_pool = [types.InputMediaPhoto(i.poster_url) for i in response.items[:5]]
+        text_mes = ''
+        for i, j in enumerate(response.items[:5]):
+            text_mes += f'{i + 1})'
+            resp = reduced_find_film(j.film_id)
+            text_mes += resp[0]
+            text_mes += resp[1]
+            text_mes += f'\n\n'
+        bot.send_media_group(m.chat.id, im_pool)
+        bot.send_message(m.chat.id, text_mes.format(m.from_user, bot.get_me()), parse_mode='html')
+    except Exception:
+        bot.send_message(m.chat.id, "Произошла ошибка")
+        bot.send_sticker(m.chat.id, "CAACAgIAAxkBAAEEaChiUBeRMyt-o2uxOc1mvJSIsUgKAAPZFwACq_whStzEfsp_ztIeIwQ")
 
 
 @bot.message_handler(commands=['trailer'])
@@ -122,13 +230,24 @@ def get_watch_list(m):
 
 
 @bot.message_handler(commands=['person'])
-def get_person(m):
-    p_name = ' '.join(m.text.split()[1:])
-    req = find_person(p_name)
-    poster = open('poster.jpg', 'rb')
-    bot.send_photo(m.chat.id, poster)
-    text = req[0] + '\n' + f'<a>{req[1]}</a>'
-    bot.send_message(m.chat.id, text, parse_mode='html')
+def get_person(m, flag=0):
+    try:
+        if flag == 1:
+            p_name = ' '.join(m.text.split()[2:])
+        else:
+            p_name = ' '.join(m.text.split()[1:])
+        req = find_person(p_name)
+        if req[0] != 'Error':
+            poster = open('poster.jpg', 'rb')
+            bot.send_photo(m.chat.id, poster)
+            text = req[0] + '\n' + f'<a>{req[1]}</a>'
+            bot.send_message(m.chat.id, text, parse_mode='html')
+        else:
+            bot.send_message(m.chat.id, "Такой человек не найден")
+            bot.send_sticker(m.chat.id, "CAACAgIAAxkBAAEEaChiUBeRMyt-o2uxOc1mvJSIsUgKAAPZFwACq_whStzEfsp_ztIeIwQ")
+    except Exception:
+        bot.send_message(m.chat.id, "Произошла ошибка")
+        bot.send_sticker(m.chat.id, "CAACAgIAAxkBAAEEaChiUBeRMyt-o2uxOc1mvJSIsUgKAAPZFwACq_whStzEfsp_ztIeIwQ")
 
 
 @bot.callback_query_handler(func=lambda call: True)
@@ -145,11 +264,22 @@ def callback(call):
                     page = wikipedia.summary(f'ID {call.data[2:]}')  # инфа о фильме с wikipedia
                     bot.send_message(call.message.chat.id, page)
                 elif call.data[:2] == 'q3':
+                    api_client = KinopoiskApiClient("74c7edf5-27c8-4dd1-99ae-a96b22f7457a")
                     curr_id = int(call.data[2:])
                     film = moviesDB.get_movie(curr_id)
                     text = ''
                     for i, j in enumerate(film['cast'][:10]):
-                        text += f'{i + 1}) <b>{j}</b>\n'
+                        if i < 5:
+                            try:
+                                person = Movie.objects.search(str(j))
+                                id = person[0].id
+                                request = PersonRequest(id)
+                                response = api_client.staff.send_person_request(request)
+                                text += f'{i + 1}) <a href="{response.webUrl}">{j}</a>\n'
+                            except Exception as e:
+                                text += f'{i + 1}) <b>{j}</b>\n'
+                        else:
+                            text += f'{i + 1}) <b>{j}</b>\n'
                     bot.send_message(call.message.chat.id, text.format(call.message.from_user, bot.get_me()),
                                      parse_mode='html')
                 elif call.data[:2] == 'q4':
@@ -201,6 +331,22 @@ def get_rating(message):
         bot.send_message(message.chat.id, 'Оценка успешно добавлена')
     except Exception:
         bot.send_message(message.chat.id, 'Некорректная оценка')
+
+
+@bot.message_handler(content_types='text')
+def lis_text(m):
+    word_of_search_film = ['найди фильм', 'покажи фильм', 'опиши фильм', 'скинь фильм']
+    word_of_search_actor = ['найди актера', 'покажи актера', 'опиши актера']
+    word_welcome = ['привет', 'здавствуй', 'приветствую']
+    word_of_search_sim_film = ['найди похожие фильмы на', 'покажи фильмы похожие на', 'найди фильм похожий на']
+    if len(list(filter(lambda x: x in m.text.lower(), word_of_search_film))) > 0:
+        get_film(m, flag=1)
+    elif len(list(filter(lambda x: x in m.text.lower(), word_of_search_actor))) > 0:
+        get_person(m, flag=1)
+    elif len(list(filter(lambda x: x in m.text.lower(), word_of_search_sim_film))) > 0:
+        get_similar_film(m, flag=1)
+    elif len(list(filter(lambda x: x == m.text.lower().split()[0], word_welcome))) > 0:
+        start(m, flag=1)
 
 
 bot.polling(none_stop=True, interval=0)

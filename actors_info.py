@@ -12,9 +12,6 @@ api_client = KinopoiskApiClient("74c7edf5-27c8-4dd1-99ae-a96b22f7457a")
 
 
 def find_person(p_name):
-    # movies = moviesDB.search_person(p_name)
-    # f_id = movies[0].getID()
-    # person = moviesDB.get_person(f_id)
     try:
         person = Movie.objects.search(p_name)
         id = person[0].id
@@ -27,5 +24,5 @@ def find_person(p_name):
         f.write(bytes(poster))
         f.close()
         return wikipedia.summary(f'{response.nameRu}'), response.webUrl
-    except Exception as e:
-        return e
+    except Exception:
+        return ['Error']
