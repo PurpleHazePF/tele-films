@@ -20,6 +20,7 @@ class Film(SqlAlchemyBase):
     id = sqlalchemy.Column(sqlalchemy.Integer,
                            primary_key=True, autoincrement=True)
     film_id = sqlalchemy.Column(sqlalchemy.Integer, nullable=True, unique=True)
+    kinopoisk_id = sqlalchemy.Column(sqlalchemy.Integer, nullable=True, unique=True)
     loc_title = sqlalchemy.Column(sqlalchemy.String, nullable=True)
     rating = sqlalchemy.Column(sqlalchemy.Integer, nullable=True)
     viewed = sqlalchemy.Column(sqlalchemy.BOOLEAN, default=False)
