@@ -39,12 +39,11 @@ def find_film(f_name, user_id):
         film = db_sess.query(Film).filter(Film.us_tg_id == user_id, Film.film_id == f_id).all()[0]
         request = BoxOfficeRequest(id)
         response2 = api_client.films.send_box_office_request(request)  # поиск инфы о кассовых сборах
-        text = f"Название фильма: <b>{movie['localized title']}</b>\n" \
-               f"Оригинальное название: <b>{movie['original title']}</b>\n" \
+        text = f"Название фильма: <b>{response.film.name_ru}</b>\n" \
                f"Режиссер: <b>{movie['directors'][0]}</b>\n" \
                f"Актеры: {', '.join([str(i) for j, i in enumerate(movie['cast']) if j < 4])}\n" \
-               f"Жанр: {movie['genres'][0]}, {movie['genres'][1]}\nГод выпуска: {movie['year']}\n" \
-               f"Рейтинг IMDb: <b>{movie['rating']}</b>\n" \
+               f"Жанр: {movie['genres'][0]}, {movie['genres'][1]}\nГод выпуска: {response.film.year}\n" \
+               f"Рейтинг IMDb: <b>{response.film.rating_imdb}</b>\n" \
                f"Страна: {movie['countries'][0]}\n" \
                f"Сценарист: {movie['writers'][0]}\n" \
                f"Бюджет: {response2.items[0].amount}{response2.items[0].symbol}\n" \
