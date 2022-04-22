@@ -403,7 +403,7 @@ def lis_text(m):
         fact = choice(response.items)
         bot.send_message(m.chat.id, 'Я вас не понимаю')
         bot.send_message(m.chat.id, f'Вот вам факт о фильме <b>"{fm.loc_title}"</b>', parse_mode='html')
-        bot.send_message(m.chat.id, fact.text, parse_mode='html')
+        bot.send_message(m.chat.id, fact.text.format(m.from_user, bot.get_me()), parse_mode='html')
 
 
 bot.polling(none_stop=True, interval=0)
