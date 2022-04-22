@@ -397,7 +397,7 @@ def lis_text(m):
     else:
         db_sess = create_session()
         api_client = KinopoiskApiClient("74c7edf5-27c8-4dd1-99ae-a96b22f7457a")
-        fm = db_sess.query(Film).filter(Film.us_tg_id == m.from_user.id)[0]
+        fm = choice(db_sess.query(Film).filter(Film.us_tg_id == m.from_user.id).all())
         request = FactsRequest(fm.kinopoisk_id)
         response = api_client.films.send_facts_request(request)
         fact = choice(response.items)
