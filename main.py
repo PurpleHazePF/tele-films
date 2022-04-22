@@ -26,7 +26,7 @@ from kinopoisk_unofficial.request.films.facts_request import FactsRequest
 # настроки баз данных и библиотек
 language = "ru"
 wikipedia.set_lang(language)
-bot = telebot.TeleBot('5250938790:AAG2GYrugR1Sa-uxWn6MbaybWcof8d_Bgjc')
+bot = telebot.TeleBot(apytoken)
 moviesDB = imdb.IMDb()
 localdb = 'db/films_info'
 global_init(localdb)
